@@ -1,11 +1,8 @@
 # Package Manager
 
-[![SonarCloud](https://sonarcloud.io/images/project_badges/sonarcloud-orange.svg)](https://sonarcloud.io/summary/new_code?id=kents00_Package-Manager)
 [![Quality Gate Status](https://sonarcloud.io/api/project_badges/measure?project=kents00_Package-Manager&metric=alert_status)](https://sonarcloud.io/summary/new_code?id=kents00_Package-Manager)
 [![Semgrep](https://github.com/kents00/Package-Manager/actions/workflows/semgrep.yml/badge.svg)](https://github.com/kents00/Package-Manager/actions/workflows/semgrep.yml)
-[![GitGuardian](https://github.com/kents00/Package-Manager/actions/workflows/gitguardian.yml/badge.svg)](https://github.com/kents00/Package-Manager/actions/workflows/gitguardian.yml)
 [![DeepSource](https://app.deepsource.com/gh/kents00/Package-Manager.svg/?label=active+issues&show_trend=true)](https://app.deepsource.com/gh/kents00/Package-Manager/)
-[![Sonatype Lift](https://github.com/kents00/Package-Manager/actions/workflows/sonatype-lift.yml/badge.svg)](https://github.com/kents00/Package-Manager/actions/workflows/sonatype-lift.yml)
 
 The Package Manager is an add-on designed to streamline the management of Python packages directly within Blender. It provides an easy-to-use interface for searching, installing, and managing Python packages, along with bulk download capabilities for package requirements.
 
