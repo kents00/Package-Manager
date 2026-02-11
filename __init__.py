@@ -47,6 +47,7 @@ _last_search_time = 0
 # PyPI helpers
 # ---------------------------------------------------------------------------
 
+
 def search_pypi(query):
     """Fetch package info from PyPI with TTL cache, ETag support, and timeout."""
     now = time.time()
@@ -98,6 +99,7 @@ def search_pypi(query):
 # ---------------------------------------------------------------------------
 # pip helpers
 # ---------------------------------------------------------------------------
+
 
 def ensure_pip():
     """Run ensurepip only once per session."""
@@ -181,6 +183,7 @@ def install_packages_from_requirements(file_path):
 # Installed packages helpers
 # ---------------------------------------------------------------------------
 
+
 def get_installed_packages(force_refresh=False):
     """Return cached list of installed packages; refresh on demand."""
     global _installed_cache
@@ -220,6 +223,7 @@ def uninstall_package(package):
 # ---------------------------------------------------------------------------
 # UI — Panel
 # ---------------------------------------------------------------------------
+
 
 class PackageManagementPanel(bpy.types.Panel):
     """Creates a Panel in the Text Editor side panel"""
@@ -319,6 +323,7 @@ class PackageManagementPanel(bpy.types.Panel):
 # UI — Operators
 # ---------------------------------------------------------------------------
 
+
 class WM_OT_FileSelect(bpy.types.Operator, ImportHelper):
     """Operator to open the file browser"""
     bl_idname = "wm.file_select"
@@ -345,7 +350,8 @@ class WM_OT_SearchPackages(bpy.types.Operator):
         if self._thread and not self._thread.is_alive():
             context.scene.package_list.clear()
             if self._error:
-                self.report({"ERROR"}, f"Error fetching results: {self._error}")
+                self.report(
+                    {"ERROR"}, f"Error fetching results: {self._error}")
             elif self._results:
                 for result in self._results:
                     item = context.scene.package_list.add()
@@ -523,6 +529,7 @@ class WM_OT_SearchInstalledPackages(bpy.types.Operator):
 # Data types
 # ---------------------------------------------------------------------------
 
+
 class PackageItem(bpy.types.PropertyGroup):
     name: bpy.props.StringProperty()
     version: bpy.props.StringProperty()
@@ -533,6 +540,7 @@ class PackageItem(bpy.types.PropertyGroup):
 # ---------------------------------------------------------------------------
 # Registration
 # ---------------------------------------------------------------------------
+
 
 classes = (
     PackageItem,
@@ -585,6 +593,7 @@ def unregister():
     del bpy.types.Scene.show_search_results
     del bpy.types.Scene.show_installed_packages
     del bpy.types.Scene.installed_search_query
+
 
 if __name__ == "__main__":
     if hasattr(bpy.utils, "register_class"):
