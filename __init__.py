@@ -440,6 +440,7 @@ def uninstall_package(package):
 
 _update_timer_registered = False
 
+
 def check_package_update(package_name):
     """Check PyPI for a newer version of a package."""
     try:
@@ -451,11 +452,13 @@ def check_package_update(package_name):
         pass
     return None
 
+
 def update_checker_timer():
     """Timer callback to trigger background update checks."""
     # This timer runs in the main thread, so it can safely access bpy.context.scene
     bg_update_check()
     return 21600  # Run every 6 hours
+
 
 def bg_update_check():
     """Trigger background check for all installed packages with auto-update on."""
@@ -467,6 +470,7 @@ def bg_update_check():
             packages_to_check.append((pkg.name, pkg.version))
 
     def _worker(pkgs):
+        """Background thread worker to check for updates on PyPI."""
         results = []
         for name, current_v in pkgs:
             latest_v = check_package_update(name)
@@ -480,6 +484,7 @@ def bg_update_check():
     threading.Thread(target=_worker, args=(packages_to_check,), daemon=True).start()
     return 21600 # 6 hours
 
+
 def apply_update_results(results):
     """Apply found updates to the property groups (Main Thread)."""
     for name, latest_v in results:
@@ -488,7 +493,6 @@ def apply_update_results(results):
                 pkg.latest_version = latest_v
                 pkg.update_available = True
                 break
-    return None
 
 # ---------------------------------------------------------------------------
 # UI — Panel
@@ -503,7 +507,8 @@ class PackageManagementPanel(bpy.types.Panel):
     bl_region_type = "UI"
     bl_category = "Package Manager"
 
-    def draw_package_box(self, layout, package, is_installed=False, installed_set=None):
+    @staticmethod
+    def draw_package_box(layout, package, is_installed=False, installed_set=None):
         """Helper to draw a single package information box."""
         box = layout.box()
         row = box.row()
@@ -665,6 +670,7 @@ class WM_OT_SearchPackages(bpy.types.Operator):
         self._error = None
 
         def _search():
+            """Background thread worker to perform PyPI search."""
             try:
                 self._results = search_pypi(query)
             except Exception as e:
@@ -739,6 +745,7 @@ class WM_OT_DownloadPackage(bpy.types.Operator):
         self._result = None
 
         def _install():
+            """Background thread worker to install a package."""
             try:
                 validate_package_name(self.package_name)
                 self._result = install_package(self.package_name)
@@ -813,6 +820,7 @@ class WM_OT_BulkDownloadPackages(bpy.types.Operator):
         self._result = None
 
         def _bulk():
+            """Background thread worker to perform bulk installation."""
             self._result = install_packages_from_requirements(file_path)
 
         self._thread = threading.Thread(target=_bulk, daemon=True)
