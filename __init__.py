@@ -434,6 +434,7 @@ def uninstall_package(package):
         logger.error("Unexpected error during uninstallation: %s", e)
         return False
 
+
 # ---------------------------------------------------------------------------
 # Auto-update logic
 # ---------------------------------------------------------------------------
@@ -482,7 +483,7 @@ def bg_update_check():
             bpy.app.timers.register(lambda: apply_update_results(results), first_interval=0.1)
 
     threading.Thread(target=_worker, args=(packages_to_check,), daemon=True).start()
-    return 21600 # 6 hours
+    return 21600  # 6 hours
 
 
 def apply_update_results(results):
