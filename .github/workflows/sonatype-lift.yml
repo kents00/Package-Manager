@@ -23,4 +23,4 @@ jobs:
       - name: Sonatype Lift Analysis
         uses: sonatype/lift-action@v2
         with:
-          github-token: ${{ secrets.GITHUB_TOKEN }}
+          github-token: ${{ secrets.SONATYPE_TOKEN }}
