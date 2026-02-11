@@ -12,7 +12,6 @@ This add-on aims to simplify the workflow for Blender users who need to manage P
 
 ## Features
 
-<<<<<<< HEAD
 - **Search PyPI** — Find Python packages with cached results, rate-limited requests, and **Consolidated Metadata** (Authors, Licenses, etc.).
 - **Install & Upgrade** — Download, install, and upgrade packages without freezing Blender's UI.
 - **Auto-Update System** — Background checker notifies you when new versions of your favorite packages are available on PyPI.
@@ -21,19 +20,11 @@ This add-on aims to simplify the workflow for Blender users who need to manage P
 - **Robust Error Handling** — Specific diagnostic messages for build failures (missing compilers, `pkg-config`), network issues, and permission errors.
 - **Bulk Download** — Install all packages from a `requirements.txt` file in a single pip call.
 - **Non-blocking UI** — Network and subprocess operations run in background threads.
-=======
-- **Search PyPI** — Find Python packages with cached results and rate-limited requests
-- **Install packages** — Download and install packages without freezing Blender's UI
-- **Manage installed packages** — View, search, and uninstall packages
-- **Bulk download** — Install all packages from a `requirements.txt` file in a single pip call
-- **Non-blocking UI** — Network and subprocess operations run in background threads
->>>>>>> 78d5846141fb251be1e1e003c1c02ebd1b967535
 
 ## Usage
 
 ### 1. **Search Packages**
 
-<<<<<<< HEAD
 - **Search Packages:** Enter your search query in the "Search Packages" section to find packages on PyPI.
 - **Documentation & Website:** Access the project's homepage or official documentation via dedicated buttons in the search results.
 - **Install Packages:** Click the "Download" button to install a package.
@@ -48,21 +39,6 @@ This add-on aims to simplify the workflow for Blender users who need to manage P
 ### 3. **Bulk Download Packages**
 
 - **Requirements File:** Select a `requirements.txt` file and click "Download All" to install multiple dependencies at once.
-=======
-- **Search Packages:** Use the "Search Packages" section to find Python packages available on PyPI (Python Package Index). Enter your search query and click "Search" to view results.
-- **Install Packages:** From the search results, you can install packages by clicking the "Download" button next to each package.
-
-### 2. **Manage Installed Packages**
-
-- **Refresh Installed Packages:** Click "Refresh" to update the list of installed packages in Blender.
-- **Search Installed Packages:** Use the "Search Installed Packages" field to filter the list of installed packages.
-- **Disable Packages:** You can uninstall packages by clicking the "Disable" button next to each package. The package list will automatically update to reflect these changes.
-
-### 3. **Bulk Download Packages**
-
-- **Choose File Path:** Use the "Choose File Path" button to select a requirements file containing a list of packages to install.
-- **Download All:** Click "Download All" to install all packages listed in the selected requirements file.
->>>>>>> 78d5846141fb251be1e1e003c1c02ebd1b967535
 
 ## Installation
 
@@ -80,7 +56,6 @@ This add-on aims to simplify the workflow for Blender users who need to manage P
 - Open the sidebar (press `N` or drag from the right edge).
 - You will find the **Package Manager** panel in the **Package Manager** tab.
 
-<<<<<<< HEAD
 ## Technical Notes
 
 - **Blender 4.2+**: Built for the latest Blender Python environment.
@@ -88,15 +63,6 @@ This add-on aims to simplify the workflow for Blender users who need to manage P
 - **Security & Safety**: Always uses the `--user` flag for installations to prevent corrupting system-level Python environments.
 - **Caching**: Search results are cached for 5 minutes, and ETags are used to minimize bandwidth for repeated searches.
 - **Update Checks**: Automatic version checks run in the background every 6 hours.
-=======
-## Notes
-
-- The add-on requires **Blender 4.2** or higher.
-- Internet access is required for searching and downloading packages.
-- Once a package is installed or removed, a restart may be required to apply changes.
-- Search results are cached for 5 minutes to reduce network requests.
-- A 2-second cooldown is applied between searches to prevent excessive API calls.
->>>>>>> 78d5846141fb251be1e1e003c1c02ebd1b967535
 
 ## Contributing
 

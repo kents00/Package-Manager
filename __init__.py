@@ -90,7 +90,7 @@ def _clean_url(raw):
         u = "https://" + (u[7:] if u.startswith("https//") else u[6:])
 
     # Basic URL validation: must start with http and contain a dot
-    if u.startswith(("http://", "https://")) and "." in u:
+    if u.startswith(("https://")) and "." in u:
         return u.rstrip(",").rstrip(";").rstrip(".")
     return None
 
