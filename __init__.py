@@ -65,7 +65,7 @@ def search_pypi(query):
         req.add_header("If-None-Match", _etag_cache[url])
 
     try:
-        with urllib.request.urlopen(req, timeout=REQUEST_TIMEOUT) as response:
+        with urllib.request.urlopen(req, timeout=REQUEST_TIMEOUT) as response:  # skipcq: BAN-B310
             etag = response.headers.get("ETag")
             if etag:
                 _etag_cache[url] = etag
@@ -513,7 +513,7 @@ class WM_OT_SearchInstalledPackages(bpy.types.Operator):
     bl_idname = "wm.search_installed_packages"
     bl_label = "Search Installed Packages"
 
-    def execute(self, context):
+    def execute(self, context):  # skipcq: PYL-R0201
         search_query = context.scene.installed_search_query.lower()
         for item in context.scene.installed_package_list:
             item.hide = search_query not in item.name.lower()
