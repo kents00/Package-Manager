@@ -1,3 +1,10 @@
+"""
+Package Manager for Blender.
+
+This module provides a UI panel and operators to manage Python packages
+directly within Blender, supporting PyPI search, installation, and
+requirements.txt bulk installation.
+"""
 import bpy
 import sys
 import os
@@ -104,7 +111,7 @@ def search_pypi(query):
 
 def ensure_pip():
     """Run ensurepip only once per session."""
-    global _pip_ensured
+    global _pip_ensured  # skipcq: PYL-W0603
     if _pip_ensured:
         return
     python_exec = sys.executable
@@ -187,7 +194,7 @@ def install_packages_from_requirements(file_path):
 
 def get_installed_packages(force_refresh=False):
     """Return cached list of installed packages; refresh on demand."""
-    global _installed_cache
+    global _installed_cache  # skipcq: PYL-W0603
     if _installed_cache is not None and not force_refresh:
         return _installed_cache
 
@@ -200,7 +207,7 @@ def get_installed_packages(force_refresh=False):
 
 def uninstall_package(package):
     """Uninstall a package via pip and invalidate cache."""
-    global _installed_cache
+    global _installed_cache  # skipcq: PYL-W0603
     python_exec = sys.executable
 
     try:
@@ -235,6 +242,7 @@ class PackageManagementPanel(bpy.types.Panel):
     bl_category = "Package Manager"
 
     def draw(self, context):
+        """Draw the panel UI."""
         layout = self.layout
 
         layout.label(text="Search Packages:")
@@ -333,6 +341,7 @@ class WM_OT_FileSelect(bpy.types.Operator, ImportHelper):
     filter_glob: bpy.props.StringProperty(default="*", options={"HIDDEN"})
 
     def execute(self, context):
+        """Update the scene property with the selected file path."""
         context.scene.bulk_download_path = self.filepath
         self.report({"INFO"}, f"Selected path: {self.filepath}")
         return {"FINISHED"}
@@ -348,6 +357,7 @@ class WM_OT_SearchPackages(bpy.types.Operator):
     _error = None
 
     def modal(self, context, event):
+        """Handle the modal execution state (waiting for thread)."""
         if self._thread and not self._thread.is_alive():
             context.scene.package_list.clear()
             if self._error:
@@ -370,7 +380,8 @@ class WM_OT_SearchPackages(bpy.types.Operator):
         return {"PASS_THROUGH"}
 
     def execute(self, context):
-        global _last_search_time
+        """Start the search in a background thread."""
+        global _last_search_time  # skipcq: PYL-W0603
 
         # Debounce
         now = time.time()
@@ -405,6 +416,7 @@ class WM_OT_RefreshInstalledPackages(bpy.types.Operator):
     bl_label = "Refresh Installed Packages"
 
     def execute(self, context):
+        """Refresh the installed packages list."""
         context.scene.installed_package_list.clear()
         installed_packages = get_installed_packages(force_refresh=True)
 
@@ -430,6 +442,7 @@ class WM_OT_DownloadPackage(bpy.types.Operator):
     _result = None
 
     def modal(self, context, event):
+        """Handle the modal execution state (waiting for thread)."""
         if self._thread and not self._thread.is_alive():
             if self._result:
                 self.report(
@@ -444,6 +457,7 @@ class WM_OT_DownloadPackage(bpy.types.Operator):
         return {"PASS_THROUGH"}
 
     def execute(self, context):
+        """Start the install in a background thread."""
         self._result = None
 
         def _install():
@@ -464,6 +478,7 @@ class WM_OT_DisablePackage(bpy.types.Operator):
     package_name: bpy.props.StringProperty()
 
     def execute(self, context):
+        """Uninstall the selected package."""
         package_name = self.package_name
         if uninstall_package(package_name):
             self.report({"INFO"}, f"{package_name} uninstalled successfully.")
@@ -481,6 +496,7 @@ class WM_OT_BulkDownloadPackages(bpy.types.Operator):
     _result = None
 
     def modal(self, context, event):
+        """Handle the modal execution state (waiting for thread)."""
         if self._thread and not self._thread.is_alive():
             file_path = context.scene.bulk_download_path
             if self._result:
@@ -498,6 +514,7 @@ class WM_OT_BulkDownloadPackages(bpy.types.Operator):
         return {"PASS_THROUGH"}
 
     def execute(self, context):
+        """Start the bulk install in a background thread."""
         file_path = context.scene.bulk_download_path
         if not file_path:
             self.report({"ERROR"}, "No file path selected.")
@@ -521,6 +538,7 @@ class WM_OT_SearchInstalledPackages(bpy.types.Operator):
     bl_label = "Search Installed Packages"
 
     def execute(self, context):  # skipcq: PYL-R0201
+        """Filter the list based on search query."""
         search_query = context.scene.installed_search_query.lower()
         for item in context.scene.installed_package_list:
             item.hide = search_query not in item.name.lower()
@@ -532,6 +550,7 @@ class WM_OT_SearchInstalledPackages(bpy.types.Operator):
 
 
 class PackageItem(bpy.types.PropertyGroup):
+    """Property group representing a package in the list."""
     name: bpy.props.StringProperty()
     version: bpy.props.StringProperty()
     author: bpy.props.StringProperty()
@@ -557,6 +576,7 @@ classes = (
 
 
 def register():
+    """Register all classes and properties."""
     for cls in classes:
         bpy.utils.register_class(cls)
 
@@ -584,6 +604,7 @@ def register():
 
 
 def unregister():
+    """Unregister all classes and properties."""
     for cls in reversed(classes):
         bpy.utils.unregister_class(cls)
 
