@@ -5,33 +5,32 @@ This module provides a UI panel and operators to manage Python packages
 directly within Blender, supporting PyPI search, installation, and
 requirements.txt bulk installation.
 """
-<<<<<<< HEAD
+from bpy_extras.io_utils import ImportHelper
+from importlib.metadata import distributions
+from importlib.metadata import distributions, distribution, PackageNotFoundError
+import urllib.error
+import urllib.request
+import threading
+import json
+import time
+import site
+import subprocess
+import os
+import sys
+import logging
+import re
+import bpy
+<< << << < HEAD
 
 __author__ = "Kent Edoloverio"
 __version__ = "1.4.0"
 __description__ = "A panel for managing Python packages directly within Blender."
 
-import bpy
-import re
-import logging
-=======
-import bpy
->>>>>>> 78d5846141fb251be1e1e003c1c02ebd1b967535
-import sys
-import os
-import subprocess
-import site
-import time
-import json
-import threading
-import urllib.request
-import urllib.error
-<<<<<<< HEAD
-from importlib.metadata import distributions, distribution, PackageNotFoundError
-=======
-from importlib.metadata import distributions
->>>>>>> 78d5846141fb251be1e1e003c1c02ebd1b967535
-from bpy_extras.io_utils import ImportHelper
+== == == =
+>>>>>> > 78d5846141fb251be1e1e003c1c02ebd1b967535
+<< << << < HEAD
+== == == =
+>>>>>> > 78d5846141fb251be1e1e003c1c02ebd1b967535
 
 # ---------------------------------------------------------------------------
 # Legacy Addon Metadata (for Blender < 4.2 or legacy install fallback)
@@ -62,7 +61,7 @@ _etag_cache = {}        # {url: etag_value}
 CACHE_TTL = 300         # 5 minutes
 SEARCH_COOLDOWN = 2     # seconds between searches
 REQUEST_TIMEOUT = 10    # seconds
-<<<<<<< HEAD
+<< << << < HEAD
 MAX_CACHE_SIZE = 100    # Maximum number of items in _pypi_cache
 SEARCH_INSTALLED_LABEL = "Search Installed Packages"
 
@@ -81,17 +80,19 @@ def validate_package_name(name):
         raise ValueError(f"Invalid package name: {name}")
 
 
-=======
+== == == =
 
 _last_search_time = 0
 
->>>>>>> 78d5846141fb251be1e1e003c1c02ebd1b967535
+>>>>>> > 78d5846141fb251be1e1e003c1c02ebd1b967535
 # ---------------------------------------------------------------------------
 # PyPI helpers
 # ---------------------------------------------------------------------------
 
 
-<<<<<<< HEAD
+<< << << < HEAD
+
+
 def _clean_url(raw):
     """Internal helper to clean and validate a single URL string."""
     if not isinstance(raw, str):
@@ -172,7 +173,11 @@ def extract_best_url(url_data):
 def _fetch_pypi_json(url):
     """Network wrapper for PyPI JSON API with ETag support."""
     req = urllib.request.Request(url, headers={"Accept": "application/json"})
-=======
+
+
+== == == =
+
+
 def search_pypi(query):
     """Fetch package info from PyPI with TTL cache, ETag support, and timeout."""
     now = time.time()
@@ -187,7 +192,7 @@ def search_pypi(query):
     req = urllib.request.Request(url, headers={"Accept": "application/json"})
 
     # ETag conditional request
->>>>>>> 78d5846141fb251be1e1e003c1c02ebd1b967535
+>>>>>> > 78d5846141fb251be1e1e003c1c02ebd1b967535
     if url in _etag_cache:
         req.add_header("If-None-Match", _etag_cache[url])
 
@@ -195,7 +200,7 @@ def search_pypi(query):
         # skipcq: BAN-B310
         with urllib.request.urlopen(req, timeout=REQUEST_TIMEOUT) as response:
             etag = response.headers.get("ETag")
-<<<<<<< HEAD
+<< << << < HEAD
             if etag: _etag_cache[url] = etag
             return json.loads(response.read().decode())
     except urllib.error.HTTPError as e:
