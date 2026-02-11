@@ -247,21 +247,32 @@ def _handle_pip_error(package, result, operation="installation"):
     """Analyze pip output to provide helpful error suggestions."""
     err = (result.stderr or "") + (result.stdout or "")
     if not err:
-        logger.error("Error during %s of %s: exit code %d", operation, package, result.returncode)
+        logger.error("Error during %s of %s: exit code %d",
+                     operation, package, result.returncode)
         return
 
     # List of (keywords, message) pairs
     patterns = [
-        (["pkg-config"], f"Missing system tool: 'pkg-config'. {package} requires external C libraries."),
-        (["Microsoft Visual C++", "cl.exe"], f"Missing build tools: {package} requires 'Microsoft Visual C++ Build Tools'."),
-        (["Requires-Python"], f"Version mismatch: {package} is not compatible with this version of Python in Blender."),
-        (["Could not find a version"], f"Not found: Could not find a version that satisfies the requirement '{package}'."),
-        (["Conflicting dependencies", "ResolutionImpossible"], f"Dependency conflict: {package} has requirements that conflict with other installed packages."),
-        (["ReadTimeoutError", "timed out"], f"Network timeout: The connection to PyPI timed out while downloading {package}."),
-        (["SSL", "connection", "ProxyError"], f"Network error: Failed to download {package}. Check your internet/proxy settings."),
-        (["No space left on device"], "Disk full: No space left on device to install the package."),
-        (["PermissionError", "Access is denied"], f"Permission denied: Try running Blender as Administrator to {operation} {package}."),
-        (["git not found", "mercurial not found", "svn not found"], f"Missing tool: A version control tool (git/hg/svn) required by {package} is not installed."),
+        (["pkg-config"],
+         f"Missing system tool: 'pkg-config'. {package} requires external C libraries."),
+        (["Microsoft Visual C++", "cl.exe"],
+         f"Missing build tools: {package} requires 'Microsoft Visual C++ Build Tools'."),
+        (["Requires-Python"],
+         f"Version mismatch: {package} is not compatible with this version of Python in Blender."),
+        (["Could not find a version"],
+         f"Not found: Could not find a version that satisfies the requirement '{package}'."),
+        (["Conflicting dependencies", "ResolutionImpossible"],
+         f"Dependency conflict: {package} has requirements that conflict with other installed packages."),
+        (["ReadTimeoutError", "timed out"],
+         f"Network timeout: The connection to PyPI timed out while downloading {package}."),
+        (["SSL", "connection", "ProxyError"],
+         f"Network error: Failed to download {package}. Check your internet/proxy settings."),
+        (["No space left on device"],
+         "Disk full: No space left on device to install the package."),
+        (["PermissionError", "Access is denied"],
+         f"Permission denied: Try running Blender as Administrator to {operation} {package}."),
+        (["git not found", "mercurial not found", "svn not found"],
+         f"Missing tool: A version control tool (git/hg/svn) required by {package} is not installed."),
     ]
 
     for keywords, msg in patterns:
@@ -309,13 +320,15 @@ def install_package(package):
                 logger.info("%s installed successfully.", package)
                 return True
             except PackageNotFoundError:
-                logger.error("Failed to verify installation of %s after pip reported success.", package)
+                logger.error(
+                    "Failed to verify installation of %s after pip reported success.", package)
                 return False
         except subprocess.CalledProcessError as e:
             logger.error("Error during installation of %s: %s", package, e)
             return False
     except Exception as e:
-        logger.error("Unexpected error during installation of %s: %s", package, e)
+        logger.error(
+            "Unexpected error during installation of %s: %s", package, e)
         return False
 
 
@@ -407,7 +420,8 @@ def uninstall_package(package):
         installed_names = [pkg["name"].lower() for pkg in installed_packages]
 
         if package.lower() not in installed_names:
-            logger.warning("Package %s not found. Skipping uninstall.", package)
+            logger.warning(
+                "Package %s not found. Skipping uninstall.", package)
             return False
 
         # Use run instead of check_call to capture output for better error detection
@@ -437,6 +451,7 @@ def uninstall_package(package):
 # ---------------------------------------------------------------------------
 # Auto-update logic
 # ---------------------------------------------------------------------------
+
 
 _update_timer_registered = False
 
@@ -479,10 +494,12 @@ def bg_update_check():
 
         # Schedule the UI update back on main thread
         if results:
-            bpy.app.timers.register(lambda: apply_update_results(results), first_interval=0.1)
+            bpy.app.timers.register(
+                lambda: apply_update_results(results), first_interval=0.1)
 
-    threading.Thread(target=_worker, args=(packages_to_check,), daemon=True).start()
-    return 21600 # 6 hours
+    threading.Thread(target=_worker, args=(
+        packages_to_check,), daemon=True).start()
+    return 21600  # 6 hours
 
 
 def apply_update_results(results):
@@ -523,8 +540,10 @@ class PackageManagementPanel(bpy.types.Panel):
 
         row = box.row()
         if is_installed and package.update_available:
-            row.label(text=f"New version available: v{package.latest_version}", icon="SOLO_ON")
-            row.operator("wm.download_package", text="Update Package", icon="UGLYPACKAGE").package_name = package.name
+            row.label(
+                text=f"New version available: v{package.latest_version}", icon="SOLO_ON")
+            row.operator("wm.download_package", text="Update Package",
+                         icon="UGLYPACKAGE").package_name = package.name
 
         row = box.row()
         if package.url or package.docs_url:
@@ -536,13 +555,15 @@ class PackageManagementPanel(bpy.types.Panel):
                 op.url = package.docs_url
 
         if is_installed:
-            row.operator("wm.uninstall_package", text="Uninstall", icon="TRASH").package_name = package.name
+            row.operator("wm.uninstall_package", text="Uninstall",
+                         icon="TRASH").package_name = package.name
             row.prop(package, "auto_update", text="Auto Update")
         else:
             if package.name.lower() in (installed_set or set()):
                 row.label(text="Installed", icon="CHECKMARK")
             else:
-                row.operator("wm.download_package", text="Download", icon="IMPORT").package_name = package.name
+                row.operator("wm.download_package", text="Download",
+                             icon="IMPORT").package_name = package.name
 
     def draw(self, context):
         """Draw the panel UI."""
@@ -562,16 +583,19 @@ class PackageManagementPanel(bpy.types.Panel):
 
         if scene.show_search_results:
             if scene.package_list:
-                installed_set = {pkg["name"].lower() for pkg in get_installed_packages()}
+                installed_set = {pkg["name"].lower()
+                                 for pkg in get_installed_packages()}
                 for package in scene.package_list:
-                    self.draw_package_box(layout, package, installed_set=installed_set)
+                    self.draw_package_box(
+                        layout, package, installed_set=installed_set)
             else:
                 box.label(text="No results found.")
 
         layout.separator()
         row = layout.row(align=True)
         row.label(text="Installed Packages:")
-        row.operator("wm.refresh_installed_packages", text="", icon="FILE_REFRESH")
+        row.operator("wm.refresh_installed_packages",
+                     text="", icon="FILE_REFRESH")
 
         layout.row().prop(scene, "installed_search_query", text=SEARCH_INSTALLED_LABEL)
         box = layout.box()
@@ -581,7 +605,8 @@ class PackageManagementPanel(bpy.types.Panel):
 
         if scene.show_installed_packages:
             query = scene.installed_search_query.lower()
-            filtered = [pkg for pkg in scene.installed_package_list if query in pkg.name.lower()]
+            filtered = [
+                pkg for pkg in scene.installed_package_list if query in pkg.name.lower()]
             if filtered:
                 for package in filtered:
                     self.draw_package_box(layout, package, is_installed=True)
