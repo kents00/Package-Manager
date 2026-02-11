@@ -41,7 +41,7 @@ This add-on aims to simplify the workflow for Blender users who need to manage P
 
 ## Installation
 
-### As a Blender 5.0+ Extension
+### As a Blender 4.2+ Extension
 
 1. **Download** the extension as a `.zip` file from this repository.
 2. Open Blender and go to **Edit > Preferences > Get Extensions**.
@@ -57,7 +57,7 @@ This add-on aims to simplify the workflow for Blender users who need to manage P
 
 ## Notes
 
-- The add-on requires **Blender 5.0** or higher.
+- The add-on requires **Blender 4.2** or higher.
 - Internet access is required for searching and downloading packages.
 - Once a package is installed or removed, a restart may be required to apply changes.
 - Search results are cached for 5 minutes to reduce network requests.
