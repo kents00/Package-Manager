@@ -5,6 +5,7 @@ This module provides a UI panel and operators to manage Python packages
 directly within Blender, supporting PyPI search, installation, and
 requirements.txt bulk installation.
 """
+<<<<<<< HEAD
 
 __author__ = "Kent Edoloverio"
 __version__ = "1.4.0"
@@ -13,6 +14,9 @@ __description__ = "A panel for managing Python packages directly within Blender.
 import bpy
 import re
 import logging
+=======
+import bpy
+>>>>>>> 78d5846141fb251be1e1e003c1c02ebd1b967535
 import sys
 import os
 import subprocess
@@ -22,7 +26,11 @@ import json
 import threading
 import urllib.request
 import urllib.error
+<<<<<<< HEAD
 from importlib.metadata import distributions, distribution, PackageNotFoundError
+=======
+from importlib.metadata import distributions
+>>>>>>> 78d5846141fb251be1e1e003c1c02ebd1b967535
 from bpy_extras.io_utils import ImportHelper
 
 # ---------------------------------------------------------------------------
@@ -54,6 +62,7 @@ _etag_cache = {}        # {url: etag_value}
 CACHE_TTL = 300         # 5 minutes
 SEARCH_COOLDOWN = 2     # seconds between searches
 REQUEST_TIMEOUT = 10    # seconds
+<<<<<<< HEAD
 MAX_CACHE_SIZE = 100    # Maximum number of items in _pypi_cache
 SEARCH_INSTALLED_LABEL = "Search Installed Packages"
 
@@ -72,11 +81,17 @@ def validate_package_name(name):
         raise ValueError(f"Invalid package name: {name}")
 
 
+=======
+
+_last_search_time = 0
+
+>>>>>>> 78d5846141fb251be1e1e003c1c02ebd1b967535
 # ---------------------------------------------------------------------------
 # PyPI helpers
 # ---------------------------------------------------------------------------
 
 
+<<<<<<< HEAD
 def _clean_url(raw):
     """Internal helper to clean and validate a single URL string."""
     if not isinstance(raw, str):
@@ -157,6 +172,22 @@ def extract_best_url(url_data):
 def _fetch_pypi_json(url):
     """Network wrapper for PyPI JSON API with ETag support."""
     req = urllib.request.Request(url, headers={"Accept": "application/json"})
+=======
+def search_pypi(query):
+    """Fetch package info from PyPI with TTL cache, ETag support, and timeout."""
+    now = time.time()
+
+    # Check in-memory cache
+    if query in _pypi_cache:
+        cached_time, cached_result = _pypi_cache[query]
+        if now - cached_time < CACHE_TTL:
+            return cached_result
+
+    url = f"https://pypi.org/pypi/{query}/json"
+    req = urllib.request.Request(url, headers={"Accept": "application/json"})
+
+    # ETag conditional request
+>>>>>>> 78d5846141fb251be1e1e003c1c02ebd1b967535
     if url in _etag_cache:
         req.add_header("If-None-Match", _etag_cache[url])
 
@@ -164,6 +195,7 @@ def _fetch_pypi_json(url):
         # skipcq: BAN-B310
         with urllib.request.urlopen(req, timeout=REQUEST_TIMEOUT) as response:
             etag = response.headers.get("ETag")
+<<<<<<< HEAD
             if etag: _etag_cache[url] = etag
             return json.loads(response.read().decode())
     except urllib.error.HTTPError as e:
@@ -214,6 +246,33 @@ def search_pypi(query):
 
     if len(_pypi_cache) >= MAX_CACHE_SIZE:
         _pypi_cache.pop(next(iter(_pypi_cache)))
+=======
+            if etag:
+                _etag_cache[url] = etag
+            data = json.loads(response.read().decode())
+    except urllib.error.HTTPError as e:
+        if e.code == 304:
+            # Not Modified — return cached result
+            cached = _pypi_cache.get(query)
+            if cached:
+                return cached[1]
+        raise RuntimeError(
+            f"Error fetching package details from PyPI. Status code: {e.code}"
+        ) from e
+    except urllib.error.URLError as e:
+        raise RuntimeError(f"Network error contacting PyPI: {e.reason}") from e
+
+    info = data["info"]
+    result = [
+        {
+            "name": info["name"],
+            "author": info.get("author") or "Unknown",
+            "version": info["version"],
+            "pkg_license": info.get("license") or "N/A",
+        }
+    ]
+
+>>>>>>> 78d5846141fb251be1e1e003c1c02ebd1b967535
     _pypi_cache[query] = (now, result)
     return result
 
@@ -239,6 +298,7 @@ def ensure_pip():
     _pip_ensured = True
 
 
+<<<<<<< HEAD
 def _handle_pip_error(package, result, operation="installation"):
     """Analyze pip output to provide helpful error suggestions."""
     err = (result.stderr or "") + (result.stdout or "")
@@ -278,10 +338,21 @@ def install_package(package):
         except PackageNotFoundError:
             pass
         logger.info(f"{package} not found. Installing...")
+=======
+def install_package(package):
+    """Install a single package via pip (ensures pip once, not per call)."""
+    try:
+        __import__(package)
+        print(f"{package} is already installed.")
+        return True
+    except ImportError:
+        print(f"{package} not found. Installing...")
+>>>>>>> 78d5846141fb251be1e1e003c1c02ebd1b967535
         python_exec = sys.executable
 
         try:
             ensure_pip()
+<<<<<<< HEAD
             result = subprocess.run(
                 [python_exec, "-m", "pip", "install", "--user", package],
                 capture_output=True,
@@ -312,12 +383,37 @@ def install_package(package):
     except Exception as e:
         logger.error(f"Unexpected error during installation of {package}: {e}")
         return False
+=======
+            subprocess.check_call(
+                [python_exec, "-m", "pip", "install", package]
+            )
+
+            user_site = site.getusersitepackages()
+            if user_site not in sys.path:
+                sys.path.append(user_site)
+                print(f"Added {user_site} to sys.path")
+
+            __import__(package)
+            print(f"{package} installed successfully.")
+            return True
+        except subprocess.CalledProcessError as e:
+            print(f"Error during installation: {e}")
+            return False
+        except ImportError as e:
+            print(f"Failed to import {package} after installation. Error: {e}")
+            print("sys.path:", sys.path)
+            return False
+>>>>>>> 78d5846141fb251be1e1e003c1c02ebd1b967535
 
 
 def install_packages_from_requirements(file_path):
     """Install all packages from a requirements file in a single pip call."""
     if not os.path.isfile(file_path):
+<<<<<<< HEAD
         logger.warning(f"Requirements file not found: {file_path}")
+=======
+        print(f"Requirements file not found: {file_path}")
+>>>>>>> 78d5846141fb251be1e1e003c1c02ebd1b967535
         return False
 
     with open(file_path, "r") as f:
@@ -328,11 +424,16 @@ def install_packages_from_requirements(file_path):
         ]
 
     if not requirements:
+<<<<<<< HEAD
         logger.warning("No packages found in requirements file.")
+=======
+        print("No packages found in requirements file.")
+>>>>>>> 78d5846141fb251be1e1e003c1c02ebd1b967535
         return False
 
     ensure_pip()
     try:
+<<<<<<< HEAD
         result = subprocess.run(
             [sys.executable, "-m", "pip", "install", "--user"] + requirements,
             capture_output=True,
@@ -347,6 +448,15 @@ def install_packages_from_requirements(file_path):
         return True
     except subprocess.CalledProcessError as e:
         logger.error(f"Error during bulk installation: {e}")
+=======
+        subprocess.check_call(
+            [sys.executable, "-m", "pip", "install"] + requirements
+        )
+        print("All packages installed successfully.")
+        return True
+    except subprocess.CalledProcessError as e:
+        print(f"Error during bulk installation: {e}")
+>>>>>>> 78d5846141fb251be1e1e003c1c02ebd1b967535
         return False
 
 # ---------------------------------------------------------------------------
@@ -360,6 +470,7 @@ def get_installed_packages(force_refresh=False):
     if _installed_cache is not None and not force_refresh:
         return _installed_cache
 
+<<<<<<< HEAD
     user_site = site.getusersitepackages().lower()
 
     _installed_cache = []
@@ -388,6 +499,12 @@ def get_installed_packages(force_refresh=False):
             "is_system": is_system,
         })
 
+=======
+    _installed_cache = [
+        {"name": d.metadata["Name"], "version": d.metadata["Version"]}
+        for d in distributions()
+    ]
+>>>>>>> 78d5846141fb251be1e1e003c1c02ebd1b967535
     return _installed_cache
 
 
@@ -401,6 +518,7 @@ def uninstall_package(package):
         installed_names = [pkg["name"].lower() for pkg in installed_packages]
 
         if package.lower() not in installed_names:
+<<<<<<< HEAD
             logger.warning(f"Package {package} not found. Skipping uninstall.")
             return False
 
@@ -484,6 +602,22 @@ def apply_update_results(results):
     return None
 
 # ---------------------------------------------------------------------------
+=======
+            print(f"Package {package} not found. Skipping uninstall.")
+            return False
+
+        subprocess.check_call(
+            [python_exec, "-m", "pip", "uninstall", "-y", package]
+        )
+        _installed_cache = None  # invalidate cache
+        print(f"{package} uninstalled successfully.")
+        return True
+    except subprocess.CalledProcessError as e:
+        print(f"Error during uninstallation: {e}")
+        return False
+
+# ---------------------------------------------------------------------------
+>>>>>>> 78d5846141fb251be1e1e003c1c02ebd1b967535
 # UI — Panel
 # ---------------------------------------------------------------------------
 
@@ -496,6 +630,7 @@ class PackageManagementPanel(bpy.types.Panel):
     bl_region_type = "UI"
     bl_category = "Package Manager"
 
+<<<<<<< HEAD
     def draw_package_box(self, layout, package, is_installed=False, installed_set=None):
         """Helper to draw a single package information box."""
         box = layout.box()
@@ -540,11 +675,21 @@ class PackageManagementPanel(bpy.types.Panel):
         layout.label(text="Search Packages:")
         row = layout.row()
         row.prop(scene, "search_query", text="")
+=======
+    def draw(self, context):
+        """Draw the panel UI."""
+        layout = self.layout
+
+        layout.label(text="Search Packages:")
+        row = layout.row()
+        row.prop(context.scene, "search_query", text="")
+>>>>>>> 78d5846141fb251be1e1e003c1c02ebd1b967535
         row.operator("wm.search_packages", text="Search")
 
         layout.label(text="Results:")
         box = layout.box()
         row = box.row()
+<<<<<<< HEAD
         row.prop(scene, "show_search_results", text="Show Search Results",
                  icon="TRIA_DOWN" if scene.show_search_results else "TRIA_RIGHT")
 
@@ -553,10 +698,32 @@ class PackageManagementPanel(bpy.types.Panel):
                 installed_set = {pkg["name"].lower() for pkg in get_installed_packages()}
                 for package in scene.package_list:
                     self.draw_package_box(layout, package, installed_set=installed_set)
+=======
+        row.prop(
+            context.scene,
+            "show_search_results",
+            text="Show Search Results",
+            icon="TRIA_DOWN"
+            if context.scene.show_search_results
+            else "TRIA_RIGHT",
+        )
+        if context.scene.show_search_results:
+            if context.scene.package_list:
+                for package in context.scene.package_list:
+                    box = layout.box()
+                    row = box.row()
+                    row.label(text=package.name, icon="FILE_SCRIPT")
+                    row.label(text=f"v{package.version}")
+                    row = box.row()
+                    row.operator(
+                        "wm.download_package", text="Download"
+                    ).package_name = package.name
+>>>>>>> 78d5846141fb251be1e1e003c1c02ebd1b967535
             else:
                 box.label(text="No results found.")
 
         layout.separator()
+<<<<<<< HEAD
         row = layout.row(align=True)
         row.label(text="Installed Packages:")
         row.operator("wm.refresh_installed_packages", text="", icon="FILE_REFRESH")
@@ -582,6 +749,59 @@ class PackageManagementPanel(bpy.types.Panel):
         row = layout.row()
         row.operator("wm.file_select", text="Choose File Path")
         row.operator("wm.bulk_download_packages", text="Download All")
+=======
+        layout.label(text="Installed Packages:")
+
+        row = layout.row()
+        row.prop(
+            context.scene,
+            "installed_search_query",
+            text="Search Installed Packages",
+        )
+        row.operator("wm.search_installed_packages", text="Search")
+
+        layout.operator("wm.refresh_installed_packages", text="Refresh")
+
+        box = layout.box()
+        row = box.row()
+        row.prop(
+            context.scene,
+            "show_installed_packages",
+            text="Show Installed Packages",
+            icon="TRIA_DOWN"
+            if context.scene.show_installed_packages
+            else "TRIA_RIGHT",
+        )
+        if context.scene.show_installed_packages:
+            filtered_packages = [
+                pkg
+                for pkg in context.scene.installed_package_list
+                if context.scene.installed_search_query.lower()
+                in pkg.name.lower()
+            ]
+            if filtered_packages:
+                for package in filtered_packages:
+                    box = layout.box()
+                    row = box.row()
+                    row.label(text=package.name, icon="FILE_SCRIPT")
+                    row.label(text=f"v{package.version}")
+
+                    row = box.row()
+                    row.operator(
+                        "wm.disable_package", text="Disable"
+                    ).package_name = package.name
+                    row.prop(package, "auto_update", text="Auto Update")
+            else:
+                box.label(
+                    text="No installed packages match the search query."
+                )
+
+        layout.separator()
+        layout.label(text="Bulk Download Packages:")
+        layout.prop(context.scene, "bulk_download_path", text="Selected Path")
+        layout.operator("wm.file_select", text="Choose File Path")
+        layout.operator("wm.bulk_download_packages", text="Download All")
+>>>>>>> 78d5846141fb251be1e1e003c1c02ebd1b967535
 
 # ---------------------------------------------------------------------------
 # UI — Operators
@@ -623,11 +843,15 @@ class WM_OT_SearchPackages(bpy.types.Operator):
                     item = context.scene.package_list.add()
                     item.name = result["name"]
                     item.version = result["version"]
+<<<<<<< HEAD
                     item.version = result["version"]
                     item.author = result["author"]
                     item.description = result["summary"]
                     item.url = result["home_page"]
                     item.docs_url = result.get("docs_url", "")
+=======
+                    item.author = result["author"]
+>>>>>>> 78d5846141fb251be1e1e003c1c02ebd1b967535
                     item.auto_update = False
                 self.report(
                     {"INFO"}, f"Found {len(self._results)} packages."
@@ -683,11 +907,14 @@ class WM_OT_RefreshInstalledPackages(bpy.types.Operator):
             item = context.scene.installed_package_list.add()
             item.name = package["name"]
             item.version = package["version"]
+<<<<<<< HEAD
             item.author = package["author"]
             item.description = package["summary"]
             item.url = package["home_page"]
             item.docs_url = package.get("docs_url", "")
             item.is_system = package.get("is_system", False)
+=======
+>>>>>>> 78d5846141fb251be1e1e003c1c02ebd1b967535
 
         self.report(
             {"INFO"}, f"Found {len(installed_packages)} installed packages."
@@ -712,6 +939,7 @@ class WM_OT_DownloadPackage(bpy.types.Operator):
                 self.report(
                     {"INFO"}, f"{self.package_name} installed successfully."
                 )
+<<<<<<< HEAD
                 # Clear update flag if it was an upgrade
                 for item in context.scene.installed_package_list:
                     if item.name == self.package_name:
@@ -719,6 +947,8 @@ class WM_OT_DownloadPackage(bpy.types.Operator):
                         # Force a refresh to get the new version number
                         bpy.ops.wm.refresh_installed_packages()
                         break
+=======
+>>>>>>> 78d5846141fb251be1e1e003c1c02ebd1b967535
             else:
                 self.report(
                     {"ERROR"}, f"Failed to install {self.package_name}."
@@ -732,12 +962,16 @@ class WM_OT_DownloadPackage(bpy.types.Operator):
         self._result = None
 
         def _install():
+<<<<<<< HEAD
             try:
                 validate_package_name(self.package_name)
                 self._result = install_package(self.package_name)
             except ValueError as e:
                 logger.error(f"Validation error: {e}")
                 self._result = False
+=======
+            self._result = install_package(self.package_name)
+>>>>>>> 78d5846141fb251be1e1e003c1c02ebd1b967535
 
         self._thread = threading.Thread(target=_install, daemon=True)
         self._thread.start()
@@ -746,16 +980,24 @@ class WM_OT_DownloadPackage(bpy.types.Operator):
         return {"RUNNING_MODAL"}
 
 
+<<<<<<< HEAD
 class WM_OT_UninstallPackage(bpy.types.Operator):
     """Uninstall a package"""
     bl_idname = "wm.uninstall_package"
     bl_label = "Uninstall Package"
+=======
+class WM_OT_DisablePackage(bpy.types.Operator):
+    """Uninstall a package"""
+    bl_idname = "wm.disable_package"
+    bl_label = "Disable Package"
+>>>>>>> 78d5846141fb251be1e1e003c1c02ebd1b967535
 
     package_name: bpy.props.StringProperty()
 
     def execute(self, context):
         """Uninstall the selected package."""
         package_name = self.package_name
+<<<<<<< HEAD
 
         try:
             validate_package_name(package_name)
@@ -763,6 +1005,8 @@ class WM_OT_UninstallPackage(bpy.types.Operator):
             self.report({"ERROR"}, str(e))
             return {"CANCELLED"}
 
+=======
+>>>>>>> 78d5846141fb251be1e1e003c1c02ebd1b967535
         if uninstall_package(package_name):
             self.report({"INFO"}, f"{package_name} uninstalled successfully.")
         else:
@@ -818,7 +1062,11 @@ class WM_OT_BulkDownloadPackages(bpy.types.Operator):
 class WM_OT_SearchInstalledPackages(bpy.types.Operator):
     """Filter the installed packages list by search query"""
     bl_idname = "wm.search_installed_packages"
+<<<<<<< HEAD
     bl_label = SEARCH_INSTALLED_LABEL
+=======
+    bl_label = "Search Installed Packages"
+>>>>>>> 78d5846141fb251be1e1e003c1c02ebd1b967535
 
     def execute(self, context):  # skipcq: PYL-R0201
         """Filter the list based on search query."""
@@ -837,6 +1085,7 @@ class PackageItem(bpy.types.PropertyGroup):
     name: bpy.props.StringProperty()
     version: bpy.props.StringProperty()
     author: bpy.props.StringProperty()
+<<<<<<< HEAD
     description: bpy.props.StringProperty()
     url: bpy.props.StringProperty()
     docs_url: bpy.props.StringProperty()
@@ -844,6 +1093,9 @@ class PackageItem(bpy.types.PropertyGroup):
     latest_version: bpy.props.StringProperty()
     update_available: bpy.props.BoolProperty(default=False)
     is_system: bpy.props.BoolProperty()
+=======
+    auto_update: bpy.props.BoolProperty()
+>>>>>>> 78d5846141fb251be1e1e003c1c02ebd1b967535
     hide: bpy.props.BoolProperty(default=False)
 
 # ---------------------------------------------------------------------------
@@ -857,7 +1109,11 @@ classes = (
     WM_OT_SearchPackages,
     WM_OT_RefreshInstalledPackages,
     WM_OT_DownloadPackage,
+<<<<<<< HEAD
     WM_OT_UninstallPackage,
+=======
+    WM_OT_DisablePackage,
+>>>>>>> 78d5846141fb251be1e1e003c1c02ebd1b967535
     WM_OT_BulkDownloadPackages,
     WM_OT_FileSelect,
     WM_OT_SearchInstalledPackages,
@@ -888,6 +1144,7 @@ def register():
         name="Show Installed Packages", default=True
     )
     bpy.types.Scene.installed_search_query = bpy.props.StringProperty(
+<<<<<<< HEAD
         name=SEARCH_INSTALLED_LABEL
     )
 
@@ -895,6 +1152,11 @@ def register():
     if not bpy.app.timers.is_registered(bg_update_check):
         bpy.app.timers.register(bg_update_check, first_interval=60.0)
 
+=======
+        name="Search Installed Packages"
+    )
+
+>>>>>>> 78d5846141fb251be1e1e003c1c02ebd1b967535
 
 def unregister():
     """Unregister all classes and properties."""
@@ -909,6 +1171,7 @@ def unregister():
     del bpy.types.Scene.show_installed_packages
     del bpy.types.Scene.installed_search_query
 
+<<<<<<< HEAD
     # Unregister timers
     if bpy.app.timers.is_registered(bg_update_check):
         bpy.app.timers.unregister(bg_update_check)
@@ -916,3 +1179,9 @@ def unregister():
 
 if __name__ == "__main__" and hasattr(bpy.utils, "register_class"):
     register()
+=======
+
+if __name__ == "__main__":
+    if hasattr(bpy.utils, "register_class"):
+        register()
+>>>>>>> 78d5846141fb251be1e1e003c1c02ebd1b967535
