@@ -48,7 +48,7 @@ pyserial==3.5
 python-apt==2.7.7+ubuntu1
 pytz==2024.1
 PyYAML==6.0.1
-requests==2.32.2
+requests==2.32.4
 rich==13.7.1
 service-identity==24.1.0
 setuptools==78.1.1
