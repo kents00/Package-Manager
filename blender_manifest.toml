@@ -1,0 +1,16 @@
+schema_version = "1.0.0"
+
+id = "package_manager"
+version = "1.4.0"
+name = "Package Manager"
+tagline = "A panel for managing Python packages directly within Blender"
+maintainer = "Kent Edoloverio"
+type = "add-on"
+
+website = "https://github.com/kents00/Package-Manager"
+tags = ["Development"]
+
+blender_version_min = "4.2.0"
+
+license = ["SPDX:MIT"]
+copyright = ["2024 Kent Edoloverio"]

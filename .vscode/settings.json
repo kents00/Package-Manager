@@ -1,0 +1,6 @@
+{
+    "sonarlint.connectedMode.project": {
+        "connectionId": "kents00",
+        "projectKey": "kents00_Package-Manager"
+    }
+}
