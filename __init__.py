@@ -164,10 +164,12 @@ def _fetch_pypi_json(url):
         # skipcq: BAN-B310
         with urllib.request.urlopen(req, timeout=REQUEST_TIMEOUT) as response:
             etag = response.headers.get("ETag")
-            if etag: _etag_cache[url] = etag
+            if etag:
+                _etag_cache[url] = etag
             return json.loads(response.read().decode())
     except urllib.error.HTTPError as e:
-        if e.code == 304: return None
+        if e.code == 304:
+            return None
         raise RuntimeError(f"PyPI Error {e.code}") from e
     except urllib.error.URLError as e:
         raise RuntimeError(f"Network error: {e.reason}") from e
@@ -176,8 +178,10 @@ def _fetch_pypi_json(url):
 def _parse_pypi_result(info):
     """Transform PyPI info dict into our internal package format."""
     urls = info.get("project_urls") or {}
-    if info.get("home_page"): urls["Homepage"] = info["home_page"]
-    if info.get("project_url"): urls["Project"] = info["project_url"]
+    if info.get("home_page"):
+        urls["Homepage"] = info["home_page"]
+    if info.get("project_url"):
+        urls["Project"] = info["project_url"]
 
     extracted = extract_best_url(urls)
     author = _format_author(
@@ -243,7 +247,7 @@ def _handle_pip_error(package, result, operation="installation"):
     """Analyze pip output to provide helpful error suggestions."""
     err = (result.stderr or "") + (result.stdout or "")
     if not err:
-        logger.error(f"Error during {operation} of {package}: exit code {result.returncode}")
+        logger.error("Error during %s of %s: exit code %d", operation, package, result.returncode)
         return
 
     # List of (keywords, message) pairs
@@ -265,7 +269,7 @@ def _handle_pip_error(package, result, operation="installation"):
             logger.error(msg)
             return
 
-    logger.error(f"Error during {operation} of {package}:\n{err}")
+    logger.error("Error during %s of %s:\n%s", operation, package, err)
 
 
 def install_package(package):
@@ -273,11 +277,11 @@ def install_package(package):
     try:
         try:
             distribution(package)
-            logger.info(f"{package} is already installed.")
+            logger.info("%s is already installed.", package)
             return True
         except PackageNotFoundError:
             pass
-        logger.info(f"{package} not found. Installing...")
+        logger.info("%s not found. Installing...", package)
         python_exec = sys.executable
 
         try:
@@ -285,7 +289,8 @@ def install_package(package):
             result = subprocess.run(
                 [python_exec, "-m", "pip", "install", "--user", package],
                 capture_output=True,
-                text=True
+                text=True,
+                check=False
             )
 
             if result.returncode != 0:
@@ -295,29 +300,29 @@ def install_package(package):
             user_site = site.getusersitepackages()
             if user_site not in sys.path:
                 sys.path.append(user_site)
-                logger.info(f"Added {user_site} to sys.path")
+                logger.info("Added %s to sys.path", user_site)
 
             # Verify installation via metadata check (case-insensitive for package name)
             try:
                 distribution(package)
                 _installed_cache = None  # invalidate cache
-                logger.info(f"{package} installed successfully.")
+                logger.info("%s installed successfully.", package)
                 return True
             except PackageNotFoundError:
-                logger.error(f"Failed to verify installation of {package} after pip reported success.")
+                logger.error("Failed to verify installation of %s after pip reported success.", package)
                 return False
         except subprocess.CalledProcessError as e:
-            logger.error(f"Error during installation of {package}: {e}")
+            logger.error("Error during installation of %s: %s", package, e)
             return False
     except Exception as e:
-        logger.error(f"Unexpected error during installation of {package}: {e}")
+        logger.error("Unexpected error during installation of %s: %s", package, e)
         return False
 
 
 def install_packages_from_requirements(file_path):
     """Install all packages from a requirements file in a single pip call."""
     if not os.path.isfile(file_path):
-        logger.warning(f"Requirements file not found: {file_path}")
+        logger.warning("Requirements file not found: %s", file_path)
         return False
 
     with open(file_path, "r") as f:
@@ -336,7 +341,8 @@ def install_packages_from_requirements(file_path):
         result = subprocess.run(
             [sys.executable, "-m", "pip", "install", "--user"] + requirements,
             capture_output=True,
-            text=True
+            text=True,
+            check=False
         )
 
         if result.returncode != 0:
@@ -346,7 +352,7 @@ def install_packages_from_requirements(file_path):
         logger.info("All packages installed successfully.")
         return True
     except subprocess.CalledProcessError as e:
-        logger.error(f"Error during bulk installation: {e}")
+        logger.error("Error during bulk installation: %s", e)
         return False
 
 # ---------------------------------------------------------------------------
@@ -401,30 +407,31 @@ def uninstall_package(package):
         installed_names = [pkg["name"].lower() for pkg in installed_packages]
 
         if package.lower() not in installed_names:
-            logger.warning(f"Package {package} not found. Skipping uninstall.")
+            logger.warning("Package %s not found. Skipping uninstall.", package)
             return False
 
         # Use run instead of check_call to capture output for better error detection
         result = subprocess.run(
             [python_exec, "-m", "pip", "uninstall", "-y", package],
             capture_output=True,
-            text=True
+            text=True,
+            check=False
         )
 
         if result.returncode != 0:
             err = result.stderr or result.stdout or ""
             if "PermissionError" in err or "Access is denied" in err:
-                logger.error(f"Permission denied: Could not uninstall {package}. "
-                             "You may need to run Blender as Administrator if it's in a system directory.")
+                logger.error("Permission denied: Could not uninstall %s. "
+                             "You may need to run Blender as Administrator if it's in a system directory.", package)
             else:
-                logger.error(f"Error during uninstallation: {err}")
+                logger.error("Error during uninstallation: %s", err)
             return False
 
         _installed_cache = None  # invalidate cache
-        logger.info(f"{package} uninstalled successfully.")
+        logger.info("%s uninstalled successfully.", package)
         return True
     except Exception as e:
-        logger.error(f"Unexpected error during uninstallation: {e}")
+        logger.error("Unexpected error during uninstallation: %s", e)
         return False
 
 # ---------------------------------------------------------------------------
@@ -736,7 +743,7 @@ class WM_OT_DownloadPackage(bpy.types.Operator):
                 validate_package_name(self.package_name)
                 self._result = install_package(self.package_name)
             except ValueError as e:
-                logger.error(f"Validation error: {e}")
+                logger.error("Validation error: %s", e)
                 self._result = False
 
         self._thread = threading.Thread(target=_install, daemon=True)
