@@ -86,10 +86,8 @@ def _clean_url(raw):
         return None
 
     # Fix common typo "https//" or "http//"
-    if u.startswith("https//"):
-        u = "https://" + u[7:]
-    elif u.startswith("http//"):
-        u = "http://" + u[6:]
+    if u.startswith(("https//", "http//")):
+        u = "https://" + (u[7:] if u.startswith("https//") else u[6:])
 
     # Basic URL validation: must start with http and contain a dot
     if u.startswith(("http://", "https://")) and "." in u:
