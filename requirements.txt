@@ -54,7 +54,7 @@ service-identity==24.1.0
 setuptools==78.1.1
 six==1.16.0
 systemd-python==235
-Twisted==24.7.0
+Twisted==26.4.0rc2
 typing_extensions==4.10.0
 ubuntu-pro-client==8001
 unattended-upgrades==0.1
