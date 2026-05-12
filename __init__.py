@@ -69,9 +69,21 @@ REQUEST_TIMEOUT = 10    # seconds
 MAX_CACHE_SIZE = 100    # Maximum number of items in _pypi_cache
 PAGE_SIZE = 20          # Pagination page size for installed packages
 SEARCH_INSTALLED_LABEL = "Search Installed Packages"
+OT_DOWNLOAD_PACKAGE = "wm.download_package"
 
+_MAX_REQ_LINE_LEN = 500  # Defense-in-depth length cap
+
+# Safe regex: no overlapping quantifiers, structured version specifiers.
+# Matches: package, package[extra], package==1.0, package>=1.0,<2.0
 _REQ_LINE_RE = re.compile(
-    r"^[a-zA-Z0-9][a-zA-Z0-9._-]*(\[.*\])?\s*(==|>=|<=|!=|~=|>|<)?\s*[a-zA-Z0-9.*,!=<>~\s]*$"
+    r"^[a-zA-Z0-9][a-zA-Z0-9._-]*"            # package name
+    r"(?:\[[a-zA-Z0-9,._-]+\])?"               # optional extras [extra1,extra2]
+    r"(?:[ \t]*"                                # optional whitespace before operator
+    r"(?:==|>=|<=|!=|~=|>|<)"                   # version operator
+    r"[ \t]*[a-zA-Z0-9.*]+"                     # version string
+    r"(?:[ \t]*,[ \t]*(?:==|>=|<=|!=|~=|>|<)"  # additional comma-separated constraints
+    r"[ \t]*[a-zA-Z0-9.*]+)*"                   # version string (repeated)
+    r")?$"                                      # end
 )
 
 _last_search_time = 0
@@ -227,8 +239,7 @@ def search_pypi(query):
         if now - cached_time < CACHE_TTL:
             _pypi_cache.move_to_end(query)  # Mark as recently used
             return cached_result
-        else:
-            del _pypi_cache[query]  # Expired
+        del _pypi_cache[query]  # Expired
 
     url = f"https://pypi.org/pypi/{query}/json"
     data = _fetch_pypi_json(url)
@@ -334,18 +345,18 @@ def install_package(package):
                 logger.error("Failed to verify installation of %s after pip reported success.", package)
                 return False
         except subprocess.CalledProcessError as e:
-            logger.error("Error during installation of %s: %s", package, e)
+            logger.exception("Error during installation of %s", package)
             return False
     except Exception as e:
-        logger.error("Unexpected error during installation of %s: %s", package, e)
+        logger.exception("Unexpected error during installation of %s", package)
         return False
 
 
-def install_packages_from_requirements(file_path):
-    """Install all packages from a requirements file in a single pip call."""
+def _parse_requirements_file(file_path):
+    """Read, validate, and return requirements from a file. Returns empty list on failure."""
     if not os.path.isfile(file_path):
         logger.warning("Requirements file not found: %s", file_path)
-        return False
+        return []
 
     with open(file_path, "r") as f:
         all_lines = [
@@ -354,18 +365,23 @@ def install_packages_from_requirements(file_path):
             if r.strip() and not r.startswith("#")
         ]
 
-    requirements = [r for r in all_lines if _REQ_LINE_RE.match(r)]
-    rejected = [r for r in all_lines if not _REQ_LINE_RE.match(r)]
+    requirements = [r for r in all_lines if len(r) <= _MAX_REQ_LINE_LEN and _REQ_LINE_RE.match(r)]
+    rejected = [r for r in all_lines if len(r) > _MAX_REQ_LINE_LEN or not _REQ_LINE_RE.match(r)]
     if rejected:
         logger.warning("Rejected %d suspicious lines from requirements: %s", len(rejected), rejected[:5])
 
-    # Warn about unpinned packages
     unpinned = [r for r in requirements if "==" not in r]
     if unpinned:
         logger.warning("%d packages have no version pin. This may cause instability.", len(unpinned))
 
+    return requirements
+
+
+def install_packages_from_requirements(file_path):
+    """Install all packages from a requirements file in a single pip call."""
+    requirements = _parse_requirements_file(file_path)
     if not requirements:
-        logger.warning("No packages found in requirements file.")
+        logger.warning("No valid packages found in requirements file.")
         return False
 
     ensure_pip()
@@ -384,7 +400,7 @@ def install_packages_from_requirements(file_path):
         logger.info("All packages installed successfully.")
         return True
     except subprocess.CalledProcessError as e:
-        logger.error("Error during bulk installation: %s", e)
+        logger.exception("Error during bulk installation")
         return False
 
 # ---------------------------------------------------------------------------
@@ -472,7 +488,7 @@ def uninstall_package(package):
         logger.info("%s uninstalled successfully.", package)
         return True
     except Exception as e:
-        logger.error("Unexpected error during uninstallation: %s", e)
+        logger.exception("Unexpected error during uninstallation")
         return False
 
 
@@ -502,6 +518,13 @@ def update_checker_timer():
     return 21600  # Run every 6 hours
 
 
+def _is_newer_version(latest_v, current_v):
+    """Return True if latest_v is newer than current_v."""
+    if parse_version:
+        return parse_version(latest_v) > parse_version(current_v)
+    return latest_v != current_v
+
+
 def bg_update_check():
     """Trigger background check for all installed packages with auto-update on."""
     packages_to_check = []
@@ -516,11 +539,8 @@ def bg_update_check():
         results = []
         for name, current_v in pkgs:
             latest_v = check_package_update(name)
-            if latest_v:
-                if parse_version and parse_version(latest_v) > parse_version(current_v):
-                    results.append((name, latest_v))
-                elif not parse_version and latest_v != current_v:
-                    results.append((name, latest_v))
+            if latest_v and _is_newer_version(latest_v, current_v):
+                results.append((name, latest_v))
 
         # Schedule the UI update back on main thread
         if results:
@@ -575,7 +595,7 @@ class PackageManagementPanel(bpy.types.Panel):
         row = box.row()
         if is_installed and package.update_available:
             row.label(text=f"Update available: v{package.latest_version}", icon="FILE_REFRESH")
-            row.operator("wm.download_package", text="Update", icon="IMPORT").package_name = package.name
+            row.operator(OT_DOWNLOAD_PACKAGE, text="Update", icon="IMPORT").package_name = package.name
 
         row = box.row()
         if package.url or package.docs_url:
@@ -593,7 +613,7 @@ class PackageManagementPanel(bpy.types.Panel):
             if package.name.lower() in (installed_set or set()):
                 row.label(text="Installed", icon="CHECKMARK")
             else:
-                row.operator("wm.download_package", text="Download", icon="IMPORT").package_name = package.name
+                row.operator(OT_DOWNLOAD_PACKAGE, text="Download", icon="IMPORT").package_name = package.name
 
 
 class PackageSearchPanel(bpy.types.Panel):
@@ -964,7 +984,7 @@ class WM_OT_InstalledPagePrev(bpy.types.Operator):
     bl_idname = "wm.installed_page_prev"
     bl_label = "Previous Page"
 
-    def execute(self, context):
+    def execute(self, context):  # skipcq: PYL-R0201
         """Go to previous page."""
         scene = context.scene
         if scene.installed_page_index > 0:
@@ -977,7 +997,7 @@ class WM_OT_InstalledPageNext(bpy.types.Operator):
     bl_idname = "wm.installed_page_next"
     bl_label = "Next Page"
 
-    def execute(self, context):
+    def execute(self, context):  # skipcq: PYL-R0201
         """Go to next page."""
         context.scene.installed_page_index += 1
         return {"FINISHED"}
