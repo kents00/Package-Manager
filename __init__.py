@@ -61,6 +61,7 @@ _pypi_cache = OrderedDict()  # LRU cache: {query: (timestamp, result)}
 _etag_cache = {}        # {url: etag_value}
 
 _SSL_CONTEXT = ssl.create_default_context()
+_SSL_CONTEXT.minimum_version = ssl.TLSVersion.TLSv1_2
 _ALLOWED_HOSTS = {"pypi.org"}
 
 CACHE_TTL = 300         # 5 minutes
@@ -344,16 +345,19 @@ def install_package(package):
             except PackageNotFoundError:
                 logger.error("Failed to verify installation of %s after pip reported success.", package)
                 return False
-        except subprocess.CalledProcessError as e:
+        except subprocess.CalledProcessError:
             logger.exception("Error during installation of %s", package)
             return False
-    except Exception as e:
+    except Exception:
         logger.exception("Unexpected error during installation of %s", package)
         return False
 
 
 def _parse_requirements_file(file_path):
-    """Read, validate, and return requirements from a file. Returns empty list on failure."""
+    """
+    Read, validate, and return requirements from a file.
+    Returns empty list on failure.
+    """
     if not os.path.isfile(file_path):
         logger.warning("Requirements file not found: %s", file_path)
         return []
@@ -399,7 +403,7 @@ def install_packages_from_requirements(file_path):
 
         logger.info("All packages installed successfully.")
         return True
-    except subprocess.CalledProcessError as e:
+    except subprocess.CalledProcessError:
         logger.exception("Error during bulk installation")
         return False
 
@@ -487,7 +491,7 @@ def uninstall_package(package):
         _installed_names_set = None  # invalidate names cache
         logger.info("%s uninstalled successfully.", package)
         return True
-    except Exception as e:
+    except Exception:
         logger.exception("Unexpected error during uninstallation")
         return False
 
@@ -979,7 +983,7 @@ class WM_OT_SearchInstalledPackages(bpy.types.Operator):
         return {"FINISHED"}
 
 
-class WM_OT_InstalledPagePrev(bpy.types.Operator):
+class WmOtInstalledPagePrev(bpy.types.Operator):
     """Show the previous page of installed packages"""
     bl_idname = "wm.installed_page_prev"
     bl_label = "Previous Page"
@@ -992,7 +996,7 @@ class WM_OT_InstalledPagePrev(bpy.types.Operator):
         return {"FINISHED"}
 
 
-class WM_OT_InstalledPageNext(bpy.types.Operator):
+class WmOtInstalledPageNext(bpy.types.Operator):
     """Show the next page of installed packages"""
     bl_idname = "wm.installed_page_next"
     bl_label = "Next Page"
@@ -1039,8 +1043,8 @@ classes = (
     WM_OT_BulkDownloadPackages,
     WM_OT_FileSelect,
     WM_OT_SearchInstalledPackages,
-    WM_OT_InstalledPagePrev,
-    WM_OT_InstalledPageNext,
+    WmOtInstalledPagePrev,
+    WmOtInstalledPageNext,
 )
 
 
