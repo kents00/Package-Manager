@@ -19,7 +19,7 @@ distro-info==1.7+build1
 filelock==3.20.3
 httplib2==0.20.4
 hyperlink==21.0.0
-idna==3.7
+idna==3.15
 incremental==22.10.0
 Jinja2==3.1.6
 jsonpatch==1.32
