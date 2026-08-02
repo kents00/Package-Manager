@@ -34,7 +34,7 @@ mdurl==0.1.2
 netifaces==0.11.0
 oauthlib==3.2.2
 platformdirs==4.2.2
-pyasn1==0.6.3
+pyasn1==0.6.4
 pyasn1-modules==0.2.8
 pycurl==7.45.3
 Pygments==2.20.0
